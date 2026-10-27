@@ -1,16 +1,8 @@
 import React, { useState, useEffect } from "react";
-import {
-  Mail,
-  Lock,
-  User,
-  Eye,
-  EyeOff,
-  MessageSquare,
-  ArrowRight,
-} from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, MessageSquare, ArrowRight } from "lucide-react";
 import "./Login.css";
 
-export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup }) {
+export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup, onError }) {
   const [animState, setAnimState] = useState("rising");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -42,8 +34,6 @@ export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup }) {
       setIsLoading(false);
       if (onLoginSuccess) {
         onLoginSuccess({ email, password });
-      } else {
-        alert(`تم تسجيل الدخول بنجاح بحساب: ${email}`);
       }
     }, 1200);
   };
@@ -69,13 +59,7 @@ export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup }) {
                 }}
               />
               <div className="app-logo-fallback" style={{ display: "none" }}>
-                <MessageSquare
-                  style={{
-                    width: "2.5rem",
-                    height: "2.5rem",
-                    color: "#ffffff",
-                  }}
-                />
+                <MessageSquare style={{ width: "2.5rem", height: "2.5rem", color: "#ffffff" }} />
               </div>
             </div>
             <span className="splash-title">ChitChat</span>
@@ -84,9 +68,7 @@ export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup }) {
       )}
 
       {/* 2. نموذج تسجيل الدخول */}
-      <div
-        className={`login-form-container ${animState === "done" ? "visible-form" : "hidden-form"}`}
-      >
+      <div className={`login-form-container ${animState === "done" ? "visible-form" : "hidden-form"}`}>
         <div className="login-card">
           <div className="login-card-top-bar" />
 
@@ -103,9 +85,7 @@ export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup }) {
                 }}
               />
               <div className="app-logo-fallback" style={{ display: "none" }}>
-                <MessageSquare
-                  style={{ width: "2rem", height: "2rem", color: "#ffffff" }}
-                />
+                <MessageSquare style={{ width: "2rem", height: "2rem", color: "#ffffff" }} />
               </div>
             </div>
             <h1 className="login-title">تسجيل الدخول</h1>
@@ -113,7 +93,6 @@ export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup }) {
           </div>
 
           <form onSubmit={handleSubmit} className="login-form" dir="ltr">
-            {/* حقل البريد الإلكتروني */}
             <div className="input-group">
               <label className="input-label">Email</label>
               <div className="input-wrapper">
@@ -131,7 +110,6 @@ export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup }) {
               </div>
             </div>
 
-            {/* حقل كلمة المرور */}
             <div className="input-group">
               <label className="input-label">Password</label>
               <div className="input-wrapper">
@@ -151,16 +129,11 @@ export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup }) {
                   onClick={() => setShowPassword(!showPassword)}
                   className="password-toggle-btn"
                 >
-                  {showPassword ? (
-                    <EyeOff style={{ width: "1.25rem", height: "1.25rem" }} />
-                  ) : (
-                    <Eye style={{ width: "1.25rem", height: "1.25rem" }} />
-                  )}
+                  {showPassword ? <EyeOff style={{ width: "1.25rem", height: "1.25rem" }} /> : <Eye style={{ width: "1.25rem", height: "1.25rem" }} />}
                 </button>
               </div>
             </div>
 
-            {/* زر تسجيل الدخول */}
             <button type="submit" disabled={isLoading} className="submit-btn">
               {isLoading ? (
                 <div className="spinner" />
@@ -173,7 +146,6 @@ export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup }) {
             </button>
           </form>
 
-          {/* رابط التبديل إلى صفحة إنشاء حساب */}
           <div className="auth-switch-text" dir="rtl">
             ليس لديك حساب؟
             <button onClick={onNavigateToSignup} className="auth-switch-link">

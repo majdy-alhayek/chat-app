@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import './Signup.css';
 
-export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin }) {
+export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin, onError }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
@@ -18,7 +18,7 @@ export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin }) 
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      alert('كلمتا المرور غير متطابقتين!');
+      if (onError) onError('كلمتا المرور غير متطابقتين!');
       return;
     }
 
@@ -28,8 +28,6 @@ export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin }) 
       setIsLoading(false);
       if (onSignupSuccess) {
         onSignupSuccess({ name, email, password });
-      } else {
-        alert(`تم إنشاء الحساب بنجاح للمستخدم: ${name}`);
       }
     }, 1200);
   };
@@ -46,18 +44,13 @@ export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin }) 
           <div className="signup-header">
             <div className="form-logo-wrapper">
               <div className="form-logo-glow" />
-              <img
-                src={logo}
-                alt="ChitChat Logo"
-                className="form-logo-img"
-              />
+              <img src={logo} alt="ChitChat Logo" className="form-logo-img" />
             </div>
             <h1 className="signup-title">إنشاء حساب جديد</h1>
             <p className="signup-subtitle">انضم إلى عائلة ChitChat اليوم</p>
           </div>
 
           <form onSubmit={handleSubmit} className="signup-form" dir="ltr">
-            {/* Name */}
             <div className="input-group">
               <label className="input-label">Name</label>
               <div className="input-wrapper">
@@ -75,7 +68,6 @@ export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin }) 
               </div>
             </div>
 
-            {/* Email */}
             <div className="input-group">
               <label className="input-label">Email</label>
               <div className="input-wrapper">
@@ -93,7 +85,6 @@ export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin }) 
               </div>
             </div>
 
-            {/* Password */}
             <div className="input-group">
               <label className="input-label">Password</label>
               <div className="input-wrapper">
@@ -118,7 +109,6 @@ export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin }) 
               </div>
             </div>
 
-            {/* Confirm Password */}
             <div className="input-group">
               <label className="input-label">Confirm Password</label>
               <div className="input-wrapper">
@@ -143,12 +133,7 @@ export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin }) 
               </div>
             </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="submit-btn"
-            >
+            <button type="submit" disabled={isLoading} className="submit-btn">
               {isLoading ? (
                 <div className="spinner" />
               ) : (
@@ -160,13 +145,9 @@ export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin }) 
             </button>
           </form>
 
-          {/* Switch to Login */}
           <div className="auth-switch-text" dir="rtl">
             لديك حساب بالفعل؟
-            <button
-              onClick={onNavigateToLogin}
-              className="auth-switch-link"
-            >
+            <button onClick={onNavigateToLogin} className="auth-switch-link">
               تسجيل الدخول
             </button>
           </div>
