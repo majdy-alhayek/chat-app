@@ -1,43 +1,67 @@
-import React, { useState } from 'react';
-import Login from './components/Login';
-import Signup from './components/Signup';
-import Notification from './components/Notification';
+import React, { useState } from "react";
+import Login from "./components/Login";
+import Signup from "./components/Signup";
+import Notification from "./components/Notification";
+import Dashboard from "./components/Dashboard";
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('login');
-  const [notification, setNotification] = useState(null); // { message, type }
+  const [currentView, setCurrentView] = useState("login"); // 'login', 'signup', 'dashboard'
+  const [currentUser, setCurrentUser] = useState(null);
+  const [notification, setNotification] = useState(null);
 
-  const showNotification = (message, type = 'success') => {
+  const showNotification = (message, type = "success") => {
     setNotification({ message, type });
   };
 
+  // إذا قام المستخدم بتسجيل الدخول أو إنشاء حساب بنجاح
+  if (currentView === "dashboard") {
+    return (
+      <Dashboard
+        user={currentUser}
+        onLogout={() => {
+          setCurrentUser(null);
+          setCurrentView("login");
+          showNotification("تم تسجيل الخروج بنجاح", "info");
+        }}
+      />
+    );
+  }
+
   return (
     <div>
-      {/* عرض مكون الإشعار بشكل عائم عند وجود أي رسالة */}
       {notification && (
-        <Notification 
-          message={notification.message} 
-          type={notification.type} 
-          onClose={() => setNotification(null)} 
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
         />
       )}
 
-      {currentView === 'login' ? (
-        <Login 
-          onNavigateToSignup={() => setCurrentView('signup')} 
+      {currentView === "login" ? (
+        <Login
+          onNavigateToSignup={() => setCurrentView("signup")}
           onLoginSuccess={(data) => {
-            showNotification(`تم تسجيل الدخول بنجاح بحساب: ${data.email}`, 'success');
+            setCurrentUser(data);
+            setCurrentView("dashboard");
+            showNotification(
+              `تم تسجيل الدخول بنجاح بحساب: ${data.email}`,
+              "success",
+            );
           }}
-          onError={(msg) => showNotification(msg, 'error')}
+          onError={(msg) => showNotification(msg, "error")}
         />
       ) : (
-        <Signup 
-          onNavigateToLogin={() => setCurrentView('login')} 
+        <Signup
+          onNavigateToLogin={() => setCurrentView("login")}
           onSignupSuccess={(data) => {
-            showNotification(`تم إنشاء الحساب بنجاح للمستخدم: ${data.name}`, 'success');
-            setTimeout(() => setCurrentView('login'), 1500); // التوجيه لصفحة تسجيل الدخول تلقائياً
+            setCurrentUser(data);
+            showNotification(
+              `تم إنشاء الحساب بنجاح للمستخدم: ${data.name}`,
+              "success",
+            );
+            setTimeout(() => setCurrentView("dashboard"), 1000);
           }}
-          onError={(msg) => showNotification(msg, 'error')}
+          onError={(msg) => showNotification(msg, "error")}
         />
       )}
     </div>

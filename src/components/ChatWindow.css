@@ -1,0 +1,110 @@
+/* ChatWindow.css - تنسيقات صندوق المحادثة الرئيسي */
+
+.chat-window {
+  flex: 1;
+  height: 100%;
+  background-color: #030712;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  direction: rtl;
+}
+
+.chat-header {
+  padding: 1rem 1.5rem;
+  background-color: rgba(15, 23, 42, 0.75);
+  border-bottom: 1px solid rgba(30, 41, 59, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chat-header-user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chat-messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.message-bubble {
+  max-width: 60%;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  position: relative;
+}
+
+.message-bubble.incoming {
+  background-color: rgba(30, 41, 59, 0.7);
+  color: #f1f5f9;
+  border-top-right-radius: 0.2rem;
+  align-self: flex-start;
+}
+
+.message-bubble.outgoing {
+  background: linear-gradient(to right, #2563eb, #4f46e5);
+  color: #ffffff;
+  border-top-left-radius: 0.2rem;
+  align-self: flex-end;
+}
+
+.message-time {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 0.25rem;
+  text-align: left;
+}
+
+.chat-input-area {
+  padding: 1rem 1.5rem;
+  background-color: rgba(15, 23, 42, 0.75);
+  border-top: 1px solid rgba(30, 41, 59, 0.8);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chat-input-field {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background-color: rgba(3, 7, 18, 0.6);
+  border: 1px solid #1e293b;
+  border-radius: 0.75rem;
+  color: #f1f5f9;
+  font-size: 0.85rem;
+}
+
+.chat-input-field:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.send-msg-btn {
+  background: linear-gradient(to right, #2563eb, #4f46e5);
+  color: #ffffff;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.send-msg-btn:hover {
+  opacity: 0.9;
+}

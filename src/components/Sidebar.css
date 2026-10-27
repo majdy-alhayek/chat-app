@@ -1,0 +1,140 @@
+/* Sidebar.css - تنسيقات القائمة الجانبية للدردشة */
+
+.chat-sidebar {
+  width: 20rem;
+  height: 100%;
+  background-color: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  border-left: 1px solid rgba(30, 41, 59, 0.8);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, sans-serif;
+  direction: rtl;
+}
+
+.sidebar-header {
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.6);
+}
+
+.user-profile-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sidebar-avatar {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #3b82f6;
+}
+
+.sidebar-user-name {
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.sidebar-user-status {
+  font-size: 0.75rem;
+  color: #22c55e;
+  margin: 0;
+}
+
+.sidebar-search-container {
+  padding: 1rem 1.25rem;
+}
+
+.sidebar-search-input {
+  width: 100%;
+  padding: 0.625rem 0.875rem 0.625rem 2.5rem;
+  background-color: rgba(3, 7, 18, 0.6);
+  border: 1px solid #1e293b;
+  border-radius: 0.625rem;
+  color: #f1f5f9;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+
+.sidebar-search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.conversations-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.conversation-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.conversation-item:hover {
+  background-color: rgba(30, 41, 59, 0.5);
+}
+
+.conversation-item.active {
+  background-color: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.conv-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.conv-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.conv-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.2rem;
+}
+
+.conv-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conv-time {
+  font-size: 0.65rem;
+  color: #64748b;
+}
+
+.conv-last-msg {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
