@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { Mail, Lock, Eye, EyeOff, MessageSquare, ArrowRight } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  MessageSquare,
+  ArrowRight,
+} from "lucide-react";
 import "./Login.css";
 
-export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup, onError }) {
+export default function Login({
+  logoSrc,
+  onLoginSuccess,
+  onNavigateToSignup,
+  onError,
+}) {
   const [animState, setAnimState] = useState("rising");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -26,18 +38,37 @@ export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup, onE
     };
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      if (onLoginSuccess) {
-        onLoginSuccess({ email, password });
-      }
-    }, 1200);
-  };
+    try {
+      const response = await fetch("http://localhost:5000/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "فشل تسجيل الدخول");
+      }
+
+      setIsLoading(false);
+
+      // حفظ الـ Token وبيانات المستخدم في localStorage
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      if (onLoginSuccess) {
+        onLoginSuccess(data.user);
+      }
+    } catch (err) {
+      setIsLoading(false);
+      if (onError) onError(err.message);
+    }
+  };
   return (
     <div className="login-container">
       <div className="login-bg-glow-1" />
@@ -59,7 +90,13 @@ export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup, onE
                 }}
               />
               <div className="app-logo-fallback" style={{ display: "none" }}>
-                <MessageSquare style={{ width: "2.5rem", height: "2.5rem", color: "#ffffff" }} />
+                <MessageSquare
+                  style={{
+                    width: "2.5rem",
+                    height: "2.5rem",
+                    color: "#ffffff",
+                  }}
+                />
               </div>
             </div>
             <span className="splash-title">ChitChat</span>
@@ -68,7 +105,9 @@ export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup, onE
       )}
 
       {/* 2. نموذج تسجيل الدخول */}
-      <div className={`login-form-container ${animState === "done" ? "visible-form" : "hidden-form"}`}>
+      <div
+        className={`login-form-container ${animState === "done" ? "visible-form" : "hidden-form"}`}
+      >
         <div className="login-card">
           <div className="login-card-top-bar" />
 
@@ -85,7 +124,9 @@ export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup, onE
                 }}
               />
               <div className="app-logo-fallback" style={{ display: "none" }}>
-                <MessageSquare style={{ width: "2rem", height: "2rem", color: "#ffffff" }} />
+                <MessageSquare
+                  style={{ width: "2rem", height: "2rem", color: "#ffffff" }}
+                />
               </div>
             </div>
             <h1 className="login-title">تسجيل الدخول</h1>
@@ -129,17 +170,21 @@ export default function Login({ logoSrc, onLoginSuccess, onNavigateToSignup, onE
                   onClick={() => setShowPassword(!showPassword)}
                   className="password-toggle-btn"
                 >
-                  {showPassword ? <EyeOff style={{ width: "1.25rem", height: "1.25rem" }} /> : <Eye style={{ width: "1.25rem", height: "1.25rem" }} />}
+                  {showPassword ? (
+                    <EyeOff style={{ width: "1.25rem", height: "1.25rem" }} />
+                  ) : (
+                    <Eye style={{ width: "1.25rem", height: "1.25rem" }} />
+                  )}
                 </button>
               </div>
             </div>
 
             <button type="submit" disabled={isLoading} className="submit-btn">
               {isLoading ? (
-                <div className="spinner" />
+                <div className="spinner" /> // دائرة التحميل
               ) : (
                 <>
-                  <span>Log in</span>
+                  <span>تسجيل الدخول</span>
                   <ArrowRight style={{ width: "1rem", height: "1rem" }} />
                 </>
               )}

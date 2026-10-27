@@ -1,35 +1,55 @@
-import React, { useState } from 'react';
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
-import './Signup.css';
+import React, { useState } from "react";
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
+import "./Signup.css";
 
-export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin, onError }) {
+export default function Signup({
+  logoSrc,
+  onSignupSuccess,
+  onNavigateToLogin,
+  onError,
+}) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const logo = logoSrc || '/logo.jpeg';
+  const logo = logoSrc || "/logo.jpeg";
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      if (onError) onError('كلمتا المرور غير متطابقتين!');
+      if (onError) onError("كلمتا المرور غير متطابقتين!");
       return;
     }
 
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      const response = await fetch("http://localhost:5000/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "فشل إنشاء الحساب");
+      }
+
       setIsLoading(false);
       if (onSignupSuccess) {
-        onSignupSuccess({ name, email, password });
+        onSignupSuccess(data.user);
       }
-    }, 1200);
+    } catch (err) {
+      setIsLoading(false);
+      if (onError) onError(err.message);
+    }
   };
 
   return (
@@ -55,7 +75,7 @@ export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin, on
               <label className="input-label">Name</label>
               <div className="input-wrapper">
                 <div className="input-icon-left">
-                  <User style={{ width: '1.1rem', height: '1.1rem' }} />
+                  <User style={{ width: "1.1rem", height: "1.1rem" }} />
                 </div>
                 <input
                   type="text"
@@ -72,7 +92,7 @@ export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin, on
               <label className="input-label">Email</label>
               <div className="input-wrapper">
                 <div className="input-icon-left">
-                  <Mail style={{ width: '1.1rem', height: '1.1rem' }} />
+                  <Mail style={{ width: "1.1rem", height: "1.1rem" }} />
                 </div>
                 <input
                   type="email"
@@ -89,10 +109,10 @@ export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin, on
               <label className="input-label">Password</label>
               <div className="input-wrapper">
                 <div className="input-icon-left">
-                  <Lock style={{ width: '1.1rem', height: '1.1rem' }} />
+                  <Lock style={{ width: "1.1rem", height: "1.1rem" }} />
                 </div>
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -104,7 +124,11 @@ export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin, on
                   onClick={() => setShowPassword(!showPassword)}
                   className="password-toggle-btn"
                 >
-                  {showPassword ? <EyeOff style={{ width: '1.1rem', height: '1.1rem' }} /> : <Eye style={{ width: '1.1rem', height: '1.1rem' }} />}
+                  {showPassword ? (
+                    <EyeOff style={{ width: "1.1rem", height: "1.1rem" }} />
+                  ) : (
+                    <Eye style={{ width: "1.1rem", height: "1.1rem" }} />
+                  )}
                 </button>
               </div>
             </div>
@@ -113,10 +137,10 @@ export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin, on
               <label className="input-label">Confirm Password</label>
               <div className="input-wrapper">
                 <div className="input-icon-left">
-                  <Lock style={{ width: '1.1rem', height: '1.1rem' }} />
+                  <Lock style={{ width: "1.1rem", height: "1.1rem" }} />
                 </div>
                 <input
-                  type={showConfirmPassword ? 'text' : 'password'}
+                  type={showConfirmPassword ? "text" : "password"}
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -128,7 +152,11 @@ export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin, on
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="password-toggle-btn"
                 >
-                  {showConfirmPassword ? <EyeOff style={{ width: '1.1rem', height: '1.1rem' }} /> : <Eye style={{ width: '1.1rem', height: '1.1rem' }} />}
+                  {showConfirmPassword ? (
+                    <EyeOff style={{ width: "1.1rem", height: "1.1rem" }} />
+                  ) : (
+                    <Eye style={{ width: "1.1rem", height: "1.1rem" }} />
+                  )}
                 </button>
               </div>
             </div>
@@ -139,7 +167,7 @@ export default function Signup({ logoSrc, onSignupSuccess, onNavigateToLogin, on
               ) : (
                 <>
                   <span>Sign up</span>
-                  <ArrowRight style={{ width: '1rem', height: '1rem' }} />
+                  <ArrowRight style={{ width: "1rem", height: "1rem" }} />
                 </>
               )}
             </button>
