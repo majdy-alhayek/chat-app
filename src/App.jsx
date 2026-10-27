@@ -1,18 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Login from './components/Login';
+import Signup from './components/Signup';
 
-function App() {
-  const handleLoginSuccess = (credentials) => {
-    console.log("تم تسجيل الدخول بالبيانات:", credentials);
-    // يمكنك هنا توجيه المستخدم لصفحة المحادثات الرئيسية
-  };
+export default function App() {
+  const [currentView, setCurrentView] = useState('login'); // 'login' أو 'signup'
 
   return (
-    <Login 
-      logoSrc="/path-to-your-logo.png" // يمكنك تمرير مسار صورتك هنا
-      onLoginSuccess={handleLoginSuccess} 
-    />
+    <div>
+      {currentView === 'login' ? (
+        <Login 
+          onNavigateToSignup={() => setCurrentView('signup')} 
+          onLoginSuccess={(data) => console.log('Logged in:', data)}
+        />
+      ) : (
+        <Signup 
+          onNavigateToLogin={() => setCurrentView('login')} 
+          onSignupSuccess={(data) => console.log('Signed up:', data)}
+        />
+      )}
+    </div>
   );
 }
-
-export default App;
