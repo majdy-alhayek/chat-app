@@ -10,13 +10,10 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// السماح بتتبع الـ IP الصحيح محلياً ليعمل الـ Rate Limiter بشكل دقيق
 app.set('trust proxy', 1);
 
-// مفتاح سري خاص بالتوكن
 const JWT_SECRET = 'your_super_secret_key_here';
 
-// الاتصال بقاعدة البيانات في Laragon
 const db = mysql.createConnection({
   host: "127.0.0.1",
   user: "root",
@@ -32,10 +29,9 @@ db.connect((err) => {
   console.log("تم الاتصال بقاعدة البيانات بنجاح!");
 });
 
-// دالة الوسيط للتحقق من صحة الـ Token وحماية المسارات
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // استخراج التوكن
+  const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
     return res.status(401).json({ error: 'غير حاصل على صلاحية الوصول، يرجى تسجيل الدخول' });
@@ -48,10 +44,9 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-// إعداد قيود محاولات تسجيل الدخول (Rate Limiter)
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 دقيقة
-  max: 5, // الحد الأقصى 5 محاولات لكل IP
+  windowMs: 15 * 60 * 1000,
+  max: 5,
   message: {
     error: 'لقد تجاوزت الحد المسموح من محاولات تسجيل الدخول، يرجى المحاولة بعد 15 دقيقة'
   },
@@ -59,20 +54,15 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// ==========================================
-// إعداد خدمة الإرسال (Gmail)
-// ==========================================
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'chatappchitchat@gmail.com',
-    pass: 'auzgbhasrpwjnmvs' // تم إزالة المسافات لتصبح متصلة بشكل صحيح
+    pass: 'auzgbhasrpwjnmvs'
   }
 });
 
-// ==========================================
-// 1. إنشاء حساب جديد (Signup Endpoint)
-// ==========================================
+// 1. إنشاء حساب جديد
 app.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -95,18 +85,15 @@ app.post("/register", async (req, res) => {
         return res.status(400).json({ error: "المستخدم مسجل مسبقاً" });
       }
 
-      // توليد رمز عشوائي من 6 أرقام
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-      // صلاحية الرمز 10 دقائق من الآن
       const codeExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
       const hashedPassword = await bcrypt.hash(password, 10);
+      
       const query = "INSERT INTO users (name, email, password, verification_code, code_expires_at, is_verified) VALUES (?, ?, ?, ?, ?, false)";
       
       db.query(query, [name, email, hashedPassword, verificationCode, codeExpiresAt], async (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
 
-        // إرسال الإيميل
         try {
           await transporter.sendMail({
             from: '"ChitChat App" <chatappchitchat@gmail.com>',
@@ -129,9 +116,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// ==========================================
-// 2. مسار التحقق من الرمز (Verify Endpoint)
-// ==========================================
+// 2. التحقق من الحساب
 app.post("/verify", (req, res) => {
   const { email, code } = req.body;
 
@@ -148,10 +133,6 @@ app.post("/verify", (req, res) => {
 
     const user = results[0];
 
-    if (user.is_verified) {
-      return res.status(400).json({ error: "الحساب مفعل مسبقاً" });
-    }
-
     if (user.verification_code !== code) {
       return res.status(400).json({ error: "رمز التحقق غير صحيح" });
     }
@@ -160,18 +141,15 @@ app.post("/verify", (req, res) => {
       return res.status(400).json({ error: "انتهت صلاحية رمز التحقق" });
     }
 
-    // تحديث حالة الحساب إلى مفعل
     db.query("UPDATE users SET is_verified = TRUE, verification_code = NULL WHERE email = ?", [email], (err) => {
       if (err) return res.status(500).json({ error: err.message });
 
-      res.json({ message: "تم تفعيل الحساب بنجاح، يمكنك تسجيل الدخول الآن" });
+      res.json({ message: "تم تفعيل الحساب بنجاح" });
     });
   });
 });
 
-// ==========================================
-// 3. تسجيل الدخول (Login Endpoint) مع الحماية (Rate Limiter)
-// ==========================================
+// 3. تسجيل الدخول
 app.post('/login', loginLimiter, (req, res) => {
   const { email, password } = req.body;
 
@@ -187,6 +165,10 @@ app.post('/login', loginLimiter, (req, res) => {
     }
 
     const user = results[0];
+
+    if (!user.is_verified) {
+      return res.status(400).json({ error: 'الحساب غير مفعل، يرجى تفعيل الحساب برمز التحقق أولاً' });
+    }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
@@ -207,37 +189,123 @@ app.post('/login', loginLimiter, (req, res) => {
   });
 });
 
-// ==========================================
-// 4. جلب جميع الرسائل (محمية بـ verifyToken)
-// ==========================================
-app.get("/messages", verifyToken, (req, res) => {
-  db.query("SELECT * FROM messages ORDER BY created_at ASC", (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.json(results);
-  });
-});
+// 4. طلب نسيان كلمة المرور (إرسال الرمز)
+app.post("/forgot-password", async (req, res) => {
+  const { email } = req.body;
 
-// ==========================================
-// 5. إرسال رسالة جديدة (محمية بـ verifyToken)
-// ==========================================
-app.post("/messages", verifyToken, (req, res) => {
-  const { sender, message } = req.body;
-  if (!sender || !message) {
-    return res.status(400).json({ error: "المرسل والرسالة مطلوبان" });
+  if (!email) {
+    return res.status(400).json({ error: "البريد الإلكتروني مطلوب" });
   }
 
-  const query = "INSERT INTO messages (sender, message) VALUES (?, ?)";
-  db.query(query, [sender, message], (err, result) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
+  db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (results.length === 0) {
+      return res.status(400).json({ error: "البريد الإلكتروني غير مسجل" });
     }
-    res.status(201).json({ id: result.insertId, sender, message });
+
+    const user = results[0];
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const codeExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    db.query(
+      "UPDATE users SET verification_code = ?, code_expires_at = ? WHERE email = ?",
+      [verificationCode, codeExpiresAt, email],
+      async (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        try {
+          await transporter.sendMail({
+            from: '"ChitChat App" <chatappchitchat@gmail.com>',
+            to: email,
+            subject: 'إعادة تعيين كلمة المرور في ChitChat',
+            html: `<h2>مرحباً ${user.name}</h2><p>رمز التحقق لإعادة تعيين كلمة المرور هو: <b>${verificationCode}</b></p>`
+          });
+        } catch (mailErr) {
+          console.error("خطأ في إرسال البريد:", mailErr);
+        }
+
+        res.json({ message: "تم إرسال رمز التحقق إلى بريدك الإلكتروني" });
+      }
+    );
   });
 });
 
-// تشغيل السيرفر
+// 5. التحقق من رمز نسيان كلمة المرور
+app.post("/verify-forgot-otp", (req, res) => {
+  const { email, code } = req.body;
+
+  if (!email || !code) {
+    return res.status(400).json({ error: "البريد الإلكتروني ورمز التحقق مطلوبان" });
+  }
+
+  db.query("SELECT * FROM users WHERE email = ?", [email], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (results.length === 0) {
+      return res.status(400).json({ error: "المستخدم غير موجود" });
+    }
+
+    const user = results[0];
+
+    if (user.verification_code !== code) {
+      return res.status(400).json({ error: "رمز التحقق غير صحيح" });
+    }
+
+    if (new Date() > new Date(user.code_expires_at)) {
+      return res.status(400).json({ error: "انتهت صلاحية رمز التحقق" });
+    }
+
+    res.json({ message: "تم التحقق من الرمز بنجاح" });
+  });
+});
+
+// 6. إعادة تعيين كلمة المرور الجديدة
+app.post("/reset-password", async (req, res) => {
+  const { email, code, newPassword } = req.body;
+
+  if (!email || !code || !newPassword) {
+    return res.status(400).json({ error: "جميع الحقول مطلوبة" });
+  }
+
+  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).+$/;
+  if (!strongPasswordRegex.test(newPassword)) {
+    return res.status(400).json({
+      error: "كلمة المرور ضعيفة يجب أن تحتوي على حرف كبير، حرف صغير، ورمز خاص على الأقل",
+    });
+  }
+
+  db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (results.length === 0) {
+      return res.status(400).json({ error: "المستخدم غير موجود" });
+    }
+
+    const user = results[0];
+
+    if (user.verification_code !== code) {
+      return res.status(400).json({ error: "رمز التحقق غير صحيح" });
+    }
+
+    if (new Date() > new Date(user.code_expires_at)) {
+      return res.status(400).json({ error: "انتهت صلاحية رمز التحقق" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    db.query(
+      "UPDATE users SET password = ?, verification_code = NULL, code_expires_at = NULL WHERE email = ?",
+      [hashedPassword, email],
+      (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        res.json({ message: "تم تغيير كلمة المرور بنجاح، يمكنك تسجيل الدخول الآن" });
+      }
+    );
+  });
+});
+
 const PORT = 5000;
 app.listen(PORT, () => {
   console.log(`السيرفر يعمل بنجاح على المنفذ ${PORT}`);
