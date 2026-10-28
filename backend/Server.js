@@ -4,6 +4,7 @@ const cors = require("cors");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const rateLimit = require("express-rate-limit");
+const nodemailer = require('nodemailer');
 
 const app = express();
 app.use(express.json());
@@ -59,6 +60,17 @@ const loginLimiter = rateLimit({
 });
 
 // ==========================================
+// إعداد خدمة الإرسال (Gmail)
+// ==========================================
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'chatappchitchat@gmail.com',
+    pass: 'auzgbhasrpwjnmvs' // تم إزالة المسافات لتصبح متصلة بشكل صحيح
+  }
+});
+
+// ==========================================
 // 1. إنشاء حساب جديد (Signup Endpoint)
 // ==========================================
 app.post("/register", async (req, res) => {
@@ -68,7 +80,6 @@ app.post("/register", async (req, res) => {
     return res.status(400).json({ error: "جميع الحقول مطلوبة" });
   }
 
-  // التحقق من قوة كلمة السر: حرف كبير، حرف صغير، ورمز خاص
   const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).+$/;
   if (!strongPasswordRegex.test(password)) {
     return res.status(400).json({
@@ -77,40 +88,89 @@ app.post("/register", async (req, res) => {
   }
 
   try {
-    db.query(
-      "SELECT * FROM users WHERE email = ?",
-      [email],
-      async (err, results) => {
+    db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      if (results.length > 0) {
+        return res.status(400).json({ error: "المستخدم مسجل مسبقاً" });
+      }
+
+      // توليد رمز عشوائي من 6 أرقام
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      // صلاحية الرمز 10 دقائق من الآن
+      const codeExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const query = "INSERT INTO users (name, email, password, verification_code, code_expires_at, is_verified) VALUES (?, ?, ?, ?, ?, false)";
+      
+      db.query(query, [name, email, hashedPassword, verificationCode, codeExpiresAt], async (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
 
-        if (results.length > 0) {
-          return res.status(400).json({ error: "المستخدم مسجل مسبقاً، عليه تسجيل الدخول" });
+        // إرسال الإيميل
+        try {
+          await transporter.sendMail({
+            from: '"ChitChat App" <chatappchitchat@gmail.com>',
+            to: email,
+            subject: 'رمز التحقق الخاص بك في ChitChat',
+            html: `<h2>مرحباً ${name}</h2><p>رمز التحقق الخاص بك هو: <b>${verificationCode}</b></p>`
+          });
+        } catch (mailErr) {
+          console.error("خطأ في إرسال البريد:", mailErr);
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const query = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
-        
-        db.query(query, [name, email, hashedPassword], (err, result) => {
-          if (err) return res.status(500).json({ error: err.message });
-
-          res.status(201).json({
-            message: "تم إنشاء الحساب بنجاح",
-            user: {
-              id: result.insertId,
-              name,
-              email,
-            },
-          });
+        res.status(201).json({
+          message: "تم إنشاء الحساب بنجاح، يرجى إدخال رمز التحقق المرسل إلى بريدك",
+          email: email
         });
-      },
-    );
+      });
+    });
   } catch (error) {
     res.status(500).json({ error: "حدث خطأ في الخادم" });
   }
 });
 
 // ==========================================
-// 2. تسجيل الدخول (Login Endpoint) مع الحماية (Rate Limiter)
+// 2. مسار التحقق من الرمز (Verify Endpoint)
+// ==========================================
+app.post("/verify", (req, res) => {
+  const { email, code } = req.body;
+
+  if (!email || !code) {
+    return res.status(400).json({ error: "البريد الإلكتروني ورمز التحقق مطلوبان" });
+  }
+
+  db.query("SELECT * FROM users WHERE email = ?", [email], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (results.length === 0) {
+      return res.status(400).json({ error: "المستخدم غير موجود" });
+    }
+
+    const user = results[0];
+
+    if (user.is_verified) {
+      return res.status(400).json({ error: "الحساب مفعل مسبقاً" });
+    }
+
+    if (user.verification_code !== code) {
+      return res.status(400).json({ error: "رمز التحقق غير صحيح" });
+    }
+
+    if (new Date() > new Date(user.code_expires_at)) {
+      return res.status(400).json({ error: "انتهت صلاحية رمز التحقق" });
+    }
+
+    // تحديث حالة الحساب إلى مفعل
+    db.query("UPDATE users SET is_verified = TRUE, verification_code = NULL WHERE email = ?", [email], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      res.json({ message: "تم تفعيل الحساب بنجاح، يمكنك تسجيل الدخول الآن" });
+    });
+  });
+});
+
+// ==========================================
+// 3. تسجيل الدخول (Login Endpoint) مع الحماية (Rate Limiter)
 // ==========================================
 app.post('/login', loginLimiter, (req, res) => {
   const { email, password } = req.body;
@@ -148,7 +208,7 @@ app.post('/login', loginLimiter, (req, res) => {
 });
 
 // ==========================================
-// 3. جلب جميع الرسائل (محمية بـ verifyToken)
+// 4. جلب جميع الرسائل (محمية بـ verifyToken)
 // ==========================================
 app.get("/messages", verifyToken, (req, res) => {
   db.query("SELECT * FROM messages ORDER BY created_at ASC", (err, results) => {
@@ -160,7 +220,7 @@ app.get("/messages", verifyToken, (req, res) => {
 });
 
 // ==========================================
-// 4. إرسال رسالة جديدة (محمية بـ verifyToken)
+// 5. إرسال رسالة جديدة (محمية بـ verifyToken)
 // ==========================================
 app.post("/messages", verifyToken, (req, res) => {
   const { sender, message } = req.body;
