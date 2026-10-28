@@ -34,7 +34,7 @@ export default function Signup({
     }
 
     setIsLoading(true);
-    if (onError) onError(""); // مسح الأخطاء السابقة
+    if (onError) onError("");
 
     try {
       const response = await fetch("http://localhost:5000/register", {
@@ -51,14 +51,40 @@ export default function Signup({
 
       setIsLoading(false);
       setSuccessMessage(data.message || "تم إرسال رمز التحقق إلى بريدك الإلكتروني");
-      setIsVerificationStep(true); // الانتقال لواجهة إدخال الرمز
+      setIsVerificationStep(true);
     } catch (err) {
       setIsLoading(false);
       if (onError) onError(err.message);
     }
   };
 
-  // 2. دالة التحقق من الرمز
+  // 2. دالة إعادة إرسال الرمز للتسجيل
+  const handleResendCode = async () => {
+    setIsLoading(true);
+    if (onError) onError("");
+
+    try {
+      const response = await fetch("http://localhost:5000/resend-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "فشل إعادة إرسال الرمز");
+      }
+
+      setIsLoading(false);
+      setSuccessMessage(data.message || "تم إعادة إرسال رمز التحقق بنجاح");
+    } catch (err) {
+      setIsLoading(false);
+      if (onError) onError(err.message);
+    }
+  };
+
+  // 3. دالة التحقق من الرمز
   const handleVerify = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -78,13 +104,16 @@ export default function Signup({
       }
 
       setIsLoading(false);
-      alert("تم تفعيل الحساب بنجاح!");
+      setSuccessMessage("تم تفعيل الحساب بنجاح!");
       
-      if (onSignupSuccess) {
-        onSignupSuccess(data.user);
-      } else if (onNavigateToLogin) {
-        onNavigateToLogin();
-      }
+      setTimeout(() => {
+        if (onSignupSuccess) {
+          onSignupSuccess(data.user);
+        } else if (onNavigateToLogin) {
+          onNavigateToLogin();
+        }
+      }, 1500);
+
     } catch (err) {
       setIsLoading(false);
       if (onError) onError(err.message);
@@ -226,7 +255,7 @@ export default function Signup({
               </button>
             </form>
           ) : (
-            // نموذج إدخال رمز التحقق (OTP)
+            // نموذج إدخال رمز التحقق (OTP) مع رابط إعادة الإرسال
             <form onSubmit={handleVerify} className="signup-form" dir="ltr">
               <div className="input-group">
                 <label className="input-label">Verification Code (OTP)</label>
@@ -245,6 +274,17 @@ export default function Signup({
                     style={{ textAlign: 'center', letterSpacing: '4px', fontSize: '1rem' }}
                   />
                 </div>
+              </div>
+
+              <div style={{ textAlign: "center", marginTop: "0.25rem" }}>
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  disabled={isLoading}
+                  style={{ background: "none", border: "none", color: "#60a5fa", fontSize: "0.75rem", cursor: "pointer", textDecoration: "underline" }}
+                >
+                  لم يصلك الرمز؟ إعادة إرسال الرمز
+                </button>
               </div>
 
               <button type="submit" disabled={isLoading} className="submit-btn">

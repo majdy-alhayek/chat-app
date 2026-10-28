@@ -305,6 +305,50 @@ app.post("/reset-password", async (req, res) => {
     );
   });
 });
+// ==========================================
+// مسار إعادة إرسال رمز التحقق (Resend Code Endpoint)
+// ==========================================
+app.post("/resend-code", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "البريد الإلكتروني مطلوب" });
+  }
+
+  db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (results.length === 0) {
+      return res.status(400).json({ error: "المستخدم غير موجود" });
+    }
+
+    const user = results[0];
+    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const codeExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 دقائق جديدة
+
+    db.query(
+      "UPDATE users SET verification_code = ?, code_expires_at = ? WHERE email = ?",
+      [newCode, codeExpiresAt, email],
+      async (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        try {
+          await transporter.sendMail({
+            from: '"ChitChat App" <chatappchitchat@gmail.com>',
+            to: email,
+            subject: 'رمز التحقق الجديد الخاص بك في ChitChat',
+            html: `<h2>مرحباً ${user.name}</h2><p>رمز التحقق الجديد هو: <b>${newCode}</b></p>`
+          });
+        } catch (mailErr) {
+          console.error("خطأ في إرسال البريد:", mailErr);
+          return res.status(500).json({ error: "فشل إرسال البريد الإلكتروني" });
+        }
+
+        res.json({ message: "تم إعادة إرسال رمز التحقق بنجاح إلى بريدك" });
+      }
+    );
+  });
+});
 
 const PORT = 5000;
 app.listen(PORT, () => {

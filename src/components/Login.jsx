@@ -111,7 +111,33 @@ export default function Login({
     }
   };
 
-  // 3. التحقق من الرمز عبر السيرفر
+  // 3. إعادة إرسال رمز التحقق لنسيان كلمة المرور
+  const handleResendCode = async () => {
+    setIsLoading(true);
+    if (onError) onError("");
+
+    try {
+      const response = await fetch("http://localhost:5000/resend-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "فشل إعادة إرسال الرمز");
+      }
+
+      setIsLoading(false);
+      setSuccessMessage(data.message || "تم إعادة إرسال الرمز بنجاح");
+    } catch (err) {
+      setIsLoading(false);
+      if (onError) onError(err.message);
+    }
+  };
+
+  // 4. التحقق من الرمز عبر السيرفر
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -139,7 +165,7 @@ export default function Login({
     }
   };
 
-  // 4. تغيير كلمة المرور الجديدة (بدون alert)
+  // 5. تغيير كلمة المرور الجديدة
   const handleResetPasswordSubmit = async (e) => {
     e.preventDefault();
 
@@ -171,7 +197,6 @@ export default function Login({
       setIsLoading(false);
       setSuccessMessage("تم تغيير كلمة المرور بنجاح، يمكنك تسجيل الدخول الآن");
       
-      // العودة لصفحة تسجيل الدخول تلقائياً بعد ثانيتين بنعومة
       setTimeout(() => {
         setForgotStep("login");
         setSuccessMessage("");
@@ -355,7 +380,7 @@ export default function Login({
             </form>
           )}
 
-          {/* 3. إدخال رمز التحقق OTP */}
+          {/* 3. إدخال رمز التحقق OTP مع رابط إعادة الإرسال */}
           {forgotStep === "otp" && (
             <form onSubmit={handleVerifyOtp} className="login-form" dir="ltr">
               <div className="input-group">
@@ -375,6 +400,17 @@ export default function Login({
                     style={{ textAlign: 'center', letterSpacing: '4px', fontSize: '1rem' }}
                   />
                 </div>
+              </div>
+
+              <div style={{ textAlign: "center", marginTop: "0.25rem" }}>
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  disabled={isLoading}
+                  style={{ background: "none", border: "none", color: "#60a5fa", fontSize: "0.75rem", cursor: "pointer", textDecoration: "underline" }}
+                >
+                  لم يصلك الرمز؟ إعادة إرسال الرمز
+                </button>
               </div>
 
               <button type="submit" disabled={isLoading} className="submit-btn">
